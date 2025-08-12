@@ -41,9 +41,8 @@ public class TestRunner {
 
     private static TestContext createTestContext(Class<?> c) {
         try {
-            Class<?> testClass = Class.forName(c.getName());
-            Object testInstance = testClass.getDeclaredConstructor().newInstance();
-            return new TestContext(testClass, testInstance);
+            Object testInstance = c.getDeclaredConstructor().newInstance();
+            return new TestContext(c, testInstance);
         } catch (Exception e) {
             throw new TestCreationException("Test must have empty constructor", e);
         }
