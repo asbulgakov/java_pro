@@ -1,0 +1,10 @@
+version: '3'
+services:
+  java-pro-postgres:
+    image: postgres:13.3
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=java_pro
+    ports:
+      - '5432:5432'
