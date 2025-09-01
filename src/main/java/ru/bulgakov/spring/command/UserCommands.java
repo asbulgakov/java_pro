@@ -1,7 +1,6 @@
 package ru.bulgakov.spring.command;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.shell.standard.ShellComponent;
 import org.springframework.shell.standard.ShellMethod;
 import ru.bulgakov.spring.converter.UserConverter;
@@ -11,7 +10,6 @@ import java.util.stream.Collectors;
 
 @ShellComponent
 @RequiredArgsConstructor
-@ConditionalOnProperty(name = "app.shell.enabled", havingValue = "true", matchIfMissing = true)
 @SuppressWarnings({"SpellCheckingInspection", "unused"})
 public class UserCommands {
 
