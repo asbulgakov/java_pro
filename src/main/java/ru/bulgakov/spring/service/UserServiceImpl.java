@@ -1,61 +1,109 @@
 package ru.bulgakov.spring.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
-import ru.bulgakov.spring.dao.UserDao;
-import ru.bulgakov.spring.exception.NotFoundUserException;
+import org.springframework.transaction.annotation.Transactional;
+import ru.bulgakov.spring.exception.UserDeletedException;
+import ru.bulgakov.spring.exception.UserNotFoundException;
+import ru.bulgakov.spring.exception.UserAlreadyExistsException;
 import ru.bulgakov.spring.model.User;
+import ru.bulgakov.spring.repository.UserRepository;
 
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
-    private final UserDao userDao;
+    private final UserRepository userRepository;
 
     @Override
+    @Transactional
     public User createUser(String username) {
-        validateUserName(username);
+        log.info("Creating user with username: {}", username);
 
-        User user = new User();
-        user.setUsername(username.trim());
-        return userDao.create(user);
-    }
+        String trimmedUsername = username.trim();
+        validateUsername(trimmedUsername);
 
-    @Override
-    public Optional<User> getUserById(Long id) {
-        validateUserId(id);
-
-        return userDao.findById(id);
-    }
-
-    @Override
-    public List<User> getAllUsers() {
-        return userDao.findAll();
-    }
-
-    @Override
-    public User updateUser(Long id, String username) {
-        validateUserId(id);
-        validateUserName(username);
-
-        Optional<User> existingUser = userDao.findById(id);
-        if (existingUser.isEmpty()) {
-            throw new NotFoundUserException("User not found with id: " + id);
+        if (userRepository.existsByUsername(trimmedUsername)) {
+            throw new UserAlreadyExistsException("User with username '" + trimmedUsername + "' already exists");
         }
 
-        User user = existingUser.get();
-        user.setUsername(username.trim());
-        return userDao.update(user);
+        User user = new User();
+        user.setUsername(trimmedUsername);
+        User savedUser = userRepository.save(user);
+
+        log.info("User created successfully with id: {}", savedUser.getId());
+        return savedUser;
     }
 
     @Override
-    public boolean deleteUser(Long id) {
+    @Transactional(readOnly = true)
+    public Optional<User> getUserById(Long id) {
+        log.info("Getting user by id: {}", id);
+        validateUserId(id);
+        return userRepository.findById(id);
+//                .orElseThrow(() -> new UserNotFoundException("User not found with id: " + id));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<User> getAllUsers() {
+        log.info("Getting all users");
+        List<User> users = userRepository.findAll();
+        log.info("Found {} users", users.size());
+        return users;
+    }
+
+    @Override
+    @Transactional
+    public User updateUser(Long id, String username) {
+        log.info("Updating user with id: {} and username: {}", id, username);
+
+        validateUserId(id);
+        String trimmedUsername = username.trim();
+        validateUsername(trimmedUsername);
+
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new UserNotFoundException("User not found with id: " + id));
+
+        userRepository.findByUsername(trimmedUsername)
+                .ifPresent(duplicateUser -> {
+                    if (!duplicateUser.getId().equals(id)) {
+                        throw new UserAlreadyExistsException("User with username '" + trimmedUsername + "' already exists");
+                    }
+                });
+
+        user.setUsername(trimmedUsername);
+        User updatedUser = userRepository.save(user);
+
+        log.info("User updated successfully with id: {}", updatedUser.getId());
+        return updatedUser;
+    }
+
+    @Override
+    @Transactional
+    public void deleteUser(Long id) {
+        log.info("Deleting user with id: {}", id);
         validateUserId(id);
 
-        return userDao.deleteById(id);
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> {
+                    log.error("User not found with id: {}", id);
+                    return new UserNotFoundException("User not found with id: " + id);
+                });
+
+        try {
+            userRepository.delete(user);
+            log.info("User deleted successfully with id: {}", id);
+        } catch (DataAccessException e) {
+            log.error("Error deleting user with id: {}", id, e);
+            throw new UserDeletedException("Failed to delete user with id: " + id, e);
+        }
     }
 
     private void validateUserId(Long id) {
@@ -64,7 +112,7 @@ public class UserServiceImpl implements UserService {
         }
     }
 
-    private void validateUserName(String username) {
+    private void validateUsername(String username) {
         if (username == null || username.trim().isEmpty()) {
             throw new IllegalArgumentException("Username cannot be null or empty");
         }

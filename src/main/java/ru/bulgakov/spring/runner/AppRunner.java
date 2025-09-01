@@ -1,22 +1,21 @@
-package ru.bulgakov.spring;
+package ru.bulgakov.spring.runner;
 
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import org.springframework.context.annotation.ComponentScan;
+import lombok.RequiredArgsConstructor;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.stereotype.Component;
 import ru.bulgakov.spring.model.User;
 import ru.bulgakov.spring.service.UserService;
 
 import java.util.List;
 import java.util.Optional;
 
-@ComponentScan
-public class Main {
-    public static void main(String[] args) {
-        ApplicationContext context = new AnnotationConfigApplicationContext(Main.class);
-        UserService userService = context.getBean(UserService.class);
-
+@Component
+@RequiredArgsConstructor
+public class AppRunner implements CommandLineRunner {
+    private final UserService userService;
+    @Override
+    public void run(String... args) throws Exception {
         System.out.println("=== Демонстрация CRUD операций с пользователями ===\n");
-
 
         // 1. Создаем пользователей
         System.out.println("1. Создаем пользователей:");
@@ -62,8 +61,8 @@ public class Main {
 
         // 7. Удаляем пользователя
         System.out.println("7. Удаляем пользователя: " + user2.getUsername());
-        boolean deleted = userService.deleteUser(user2.getId());
-        System.out.println("Пользователь удален: " + deleted);
+        userService.deleteUser(user2.getId());
+        System.out.println("Пользователь удален");
         System.out.println();
 
         // 8. Получаем всех пользователей после удаления
@@ -73,14 +72,9 @@ public class Main {
         users.forEach(System.out::println);
         System.out.println();
 
-        // 9. Попытка получить удаленного пользователя
-        System.out.println("9. Попытка получить удаленного пользователя:");
-        Optional<User> deletedUser = userService.getUserById(user2.getId());
-        if (deletedUser.isPresent()) {
-            System.out.println("Найден пользователь: " + deletedUser.get());
-        } else {
-            System.out.println("Пользователь с ID " + user2.getId() + " не найден (удален)");
-        }
+//        // 9. Попытка получить удаленного пользователя
+//        System.out.println("9. Попытка получить удаленного пользователя:");
+//        User deletedUser = userService.getUserById(user2.getId());
 
         System.out.println("\n=== Все операции выполнены успешно! ===");
     }
