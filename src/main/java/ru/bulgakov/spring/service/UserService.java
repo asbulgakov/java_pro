@@ -1,14 +1,13 @@
 package ru.bulgakov.spring.service;
 
-import ru.bulgakov.spring.model.User;
+import ru.bulgakov.spring.dto.user.rs.UserDtoRs;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface UserService {
-    Optional<User> getUserById(Long id);
-    List<User> getAllUsers();
-    User createUser(String username);
-    User updateUser(Long id, String username);
+    UserDtoRs getUserById(Long id);
+    List<UserDtoRs> getAllUsers();
+    UserDtoRs createUser(String username);
+    UserDtoRs updateUser(Long id, String username);
     void deleteUser(Long id);
 }

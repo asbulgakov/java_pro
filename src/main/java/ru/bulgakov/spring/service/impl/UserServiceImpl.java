@@ -1,18 +1,22 @@
-package ru.bulgakov.spring.service;
+package ru.bulgakov.spring.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.bulgakov.spring.dto.user.rs.UserDtoRs;
 import ru.bulgakov.spring.exception.UserDeletedException;
 import ru.bulgakov.spring.exception.UserNotFoundException;
 import ru.bulgakov.spring.exception.UserAlreadyExistsException;
+import ru.bulgakov.spring.mapper.UserMapper;
+import ru.bulgakov.spring.model.Product;
 import ru.bulgakov.spring.model.User;
+import ru.bulgakov.spring.repository.ProductRepository;
 import ru.bulgakov.spring.repository.UserRepository;
+import ru.bulgakov.spring.service.UserService;
 
 import java.util.List;
-import java.util.Optional;
 
 @Slf4j
 @Service
@@ -20,10 +24,12 @@ import java.util.Optional;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+    private final ProductRepository productRepository;
+    private final UserMapper userMapper;
 
     @Override
     @Transactional
-    public User createUser(String username) {
+    public UserDtoRs createUser(String username) {
         log.info("Creating user with username: {}", username);
 
         String trimmedUsername = username.trim();
@@ -38,30 +44,33 @@ public class UserServiceImpl implements UserService {
         User savedUser = userRepository.save(user);
 
         log.info("User created successfully with id: {}", savedUser.getId());
-        return savedUser;
+        return userMapper.toDto(savedUser);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Optional<User> getUserById(Long id) {
+    public UserDtoRs getUserById(Long id) {
         log.info("Getting user by id: {}", id);
         validateUserId(id);
-        return userRepository.findById(id);
-//                .orElseThrow(() -> new UserNotFoundException("User not found with id: " + id));
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new UserNotFoundException("User not found with id: " + id));
+        return userMapper.toDto(user);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<User> getAllUsers() {
+    public List<UserDtoRs> getAllUsers() {
         log.info("Getting all users");
         List<User> users = userRepository.findAll();
         log.info("Found {} users", users.size());
-        return users;
+        return users.stream()
+                .map(userMapper::toDto)
+                .toList();
     }
 
     @Override
     @Transactional
-    public User updateUser(Long id, String username) {
+    public UserDtoRs updateUser(Long id, String username) {
         log.info("Updating user with id: {} and username: {}", id, username);
 
         validateUserId(id);
@@ -82,7 +91,7 @@ public class UserServiceImpl implements UserService {
         User updatedUser = userRepository.save(user);
 
         log.info("User updated successfully with id: {}", updatedUser.getId());
-        return updatedUser;
+        return userMapper.toDto(updatedUser);
     }
 
     @Override
@@ -96,6 +105,13 @@ public class UserServiceImpl implements UserService {
                     log.error("User not found with id: {}", id);
                     return new UserNotFoundException("User not found with id: " + id);
                 });
+
+        // Проверяем, есть ли у пользователя продукты
+        List<Product> userProducts = productRepository.findByUserId(id);
+        if (!userProducts.isEmpty()) {
+            throw new UserDeletedException("Cannot delete user with id: " + id +
+                    " because they have " + userProducts.size() + " products");
+        }
 
         try {
             userRepository.delete(user);
