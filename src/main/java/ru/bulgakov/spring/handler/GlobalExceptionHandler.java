@@ -15,7 +15,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler({
             UserNotFoundException.class,
-            ProductNotFoundException.class // Добавляем сюда
+            ProductNotFoundException.class
     })
     public ErrorRs handleNotFoundExceptions(RuntimeException ex) {
         String msg = ex.getMessage();
