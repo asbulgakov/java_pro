@@ -18,19 +18,4 @@ public interface ProductMapper {
 
     @Mapping(source = "accountNumber", target = "accountNumber")
     Product toEntity(ProductCreateRq dto);
-
-//    default ProductDtoRs mapProductToDto(Product product) {
-//        if (product == null) {
-//            return null;
-//        }
-//
-//        return new ProductDtoRs(
-//                product.getId(),
-//                product.getAccountNumber(),
-//                product.getBalance(),
-//                product.getProductType(),
-//                product.getUser() != null ? product.getUser().getId() : null,
-//                product.getUser() != null ? product.getUser().getUsername() : null
-//        );
-//    }
 }

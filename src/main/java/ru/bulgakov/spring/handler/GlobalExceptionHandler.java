@@ -13,32 +13,21 @@ import ru.bulgakov.spring.exception.UserNotFoundException;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(UserNotFoundException.class)
-    public ErrorRs handleUserNotFound(UserNotFoundException ex) {
+    @ExceptionHandler({
+            UserNotFoundException.class,
+            ProductNotFoundException.class // Добавляем сюда
+    })
+    public ErrorRs handleNotFoundExceptions(RuntimeException ex) {
         String msg = ex.getMessage();
         return new ErrorRs(HttpStatus.NOT_FOUND.value(), msg);
     }
 
-    @ExceptionHandler(UserAlreadyExistsException.class)
-    public ErrorRs handleUserAlreadyExists(UserAlreadyExistsException ex) {
-        String msg = ex.getMessage();
-        return new ErrorRs(HttpStatus.CONFLICT.value(), msg);
-    }
-
-    @ExceptionHandler(UserDeletedException.class)
-    public ErrorRs handleUserDeletionException(UserDeletedException ex) {
-        String msg = ex.getMessage();
-        return new ErrorRs(HttpStatus.CONFLICT.value(), msg);
-    }
-
-    @ExceptionHandler(ProductNotFoundException.class)
-    public ErrorRs handleProductNotFound(ProductNotFoundException ex) {
-        String msg = ex.getMessage();
-        return new ErrorRs(HttpStatus.NOT_FOUND.value(), msg);
-    }
-
-    @ExceptionHandler(ProductAlreadyExistsException.class)
-    public ErrorRs handleProductAlreadyExists(ProductAlreadyExistsException ex) {
+    @ExceptionHandler({
+            UserAlreadyExistsException.class,
+            ProductAlreadyExistsException.class,
+            UserDeletedException.class
+    })
+    public ErrorRs handleAlreadyExistsExceptions(RuntimeException ex) {
         String msg = ex.getMessage();
         return new ErrorRs(HttpStatus.CONFLICT.value(), msg);
     }

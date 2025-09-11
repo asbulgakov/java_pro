@@ -20,7 +20,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     boolean existsByAccountNumber(String accountNumber);
 
     @EntityGraph(value = "product-with-user", type = EntityGraph.EntityGraphType.LOAD)
-    Optional<Product> findById(Long id);
+    Optional<Product> findById(@Nonnull Long id);
 
     @Modifying
     @Query("DELETE FROM Product p WHERE p.id = :id")
