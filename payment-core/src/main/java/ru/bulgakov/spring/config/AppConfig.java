@@ -16,7 +16,7 @@ public class AppConfig {
     private final RestTemplateResponseErrorHandler errorHandler;
 
     @Bean
-    public RestTemplate productClient() {
+    public RestTemplate productRestTemplate() {
         RestTemplateProperties productClient = clientConfigurationProperties.getProductClient();
         return new RestTemplateBuilder()
                 .rootUri(productClient.getUrl())
