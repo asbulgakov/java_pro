@@ -7,10 +7,10 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: none
     properties:
       hibernate:
-        default_schema: public
+        default_schema: payment
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
     show-sql: true
@@ -20,9 +20,9 @@ spring:
     baseline-on-migrate: true
     location: classpath:db/migration
 
+services:
+  product-service:
+    url: http://localhost:8081
+
 server:
   port: 8080
-
-logging:
-  level:
-    root: INFO

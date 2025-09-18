@@ -12,10 +12,10 @@ import ru.bulgakov.spring.model.Product;
         uses = {UserMapper.class})
 public interface ProductMapper {
 
-    @Mapping(target = "userId", expression = "java(product.getUser() != null ? product.getUser().getId() : null)")
-    @Mapping(target = "username", expression = "java(product.getUser() != null ? product.getUser().getUsername() : null)")
+    @Mapping(target = "userId", source = "user.id")
+    @Mapping(target = "username", source = "user.username")
     ProductDtoRs toDto(Product product);
 
-    @Mapping(source = "accountNumber", target = "accountNumber")
+    @Mapping(target = "accountNumber", source = "accountNumber")
     Product toEntity(ProductCreateRq dto);
 }
