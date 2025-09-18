@@ -2,7 +2,6 @@ package ru.bulgakov.spring.client;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import ru.bulgakov.spring.dto.product.ProductDtoRs;
@@ -18,11 +17,8 @@ import java.util.List;
 public class ProductClient {
     private final RestTemplate restTemplate;
 
-    @Value("${services.product-service.url}")
-    private String productServiceUrl;
-
     public List<ProductDtoRs> getUserProducts(Long userId) {
-        String url = productServiceUrl + "/products/users/" + userId;
+        String url = "/products/users/" + userId;
         log.debug("Requesting user products from: {}", url);
 
         ProductDtoRs[] productsArray = restTemplate.getForObject(url, ProductDtoRs[].class);
@@ -30,12 +26,12 @@ public class ProductClient {
     }
 
     public ProductDtoRs updateBalanceUserProduct(ProductUpdateRq productUpdateRq) {
-        String url = productServiceUrl + "/products";
+        String url = "/products";
         return restTemplate.patchForObject(url, productUpdateRq, ProductDtoRs.class);
     }
 
     public ProductDtoRs getProductById(Long productId) {
-        String url = productServiceUrl + "/products/" + productId;
+        String url = "/products/" + productId;
         return restTemplate.getForObject(url, ProductDtoRs.class);
     }
 }

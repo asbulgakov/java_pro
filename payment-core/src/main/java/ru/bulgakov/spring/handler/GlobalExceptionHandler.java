@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import ru.bulgakov.spring.exception.BalanceUpdateException;
 import ru.bulgakov.spring.exception.InsufficientFundsException;
+import ru.bulgakov.spring.exception.IntegrationException;
 import ru.bulgakov.spring.exception.NoPaymentMethodsException;
 import ru.bulgakov.spring.exception.PaymentProcessingException;
 import ru.bulgakov.spring.exception.ProductNotFoundException;
@@ -47,5 +48,14 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ErrorResponse handleGenericException(RuntimeException ex) {
         return new ErrorResponse("Внутренняя ошибка сервера", "INTERNAL_ERROR");
+    }
+
+    @ExceptionHandler(IntegrationException.class)
+    @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
+    public ErrorResponse handleIntegrationException(IntegrationException ex) {
+        return new ErrorResponse(
+                ex.getExternalMessage(),
+                "INTEGRATION_ERROR"
+        );
     }
 }

@@ -20,9 +20,10 @@ spring:
     baseline-on-migrate: true
     location: classpath:db/migration
 
-services:
-  product-service:
-    url: http://localhost:8081
+integrations:
+  clients:
+    product-client:
+      url: http://localhost:8081
 
 server:
   port: 8080
