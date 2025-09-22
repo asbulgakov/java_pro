@@ -1,11 +1,13 @@
 package ru.bulgakov.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.bulgakov.dto.LimitDtoRq;
 import ru.bulgakov.dto.LimitDtoRs;
+import ru.bulgakov.dto.LimitUpdateDtoRq;
 import ru.bulgakov.exception.InsufficientLimitException;
 import ru.bulgakov.exception.InvalidAmountException;
 import ru.bulgakov.exception.LimitNotFoundException;
@@ -15,11 +17,10 @@ import ru.bulgakov.model.UserLimit;
 import ru.bulgakov.repository.LimitRepository;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class LimitServiceImpl implements LimitService {
@@ -32,10 +33,7 @@ public class LimitServiceImpl implements LimitService {
     public LimitDtoRs getOrCreateUserLimit(Long userId) {
         UserLimit limit = getLimitByUserId(userId)
                 .orElseGet(() -> createDefaultUserLimit(userId));
-        if (isResetNeeded(limit.getLastResetDate())) {
-            reset(limit, LocalDateTime.now());
-            limit = limitRepository.save(limit);
-        }
+
         return limitMapper.toDto(limit);
     }
 
@@ -45,9 +43,7 @@ public class LimitServiceImpl implements LimitService {
         validateAmount(limitDtoRq.amount());
         UserLimit limit = getLimitByUserId(limitDtoRq.userId())
                 .orElseGet(() -> createDefaultUserLimit(limitDtoRq.userId()));
-        if (isResetNeeded(limit.getLastResetDate())) {
-            reset(limit, LocalDateTime.now());
-        }
+
         if (!hasSufficientLimit(limit, limitDtoRq.amount())) {
             throw new InsufficientLimitException(
                     String.format("Insufficient limit. Requested: %s, Available: %s",
@@ -61,15 +57,18 @@ public class LimitServiceImpl implements LimitService {
 
     @Override
     @Transactional
-    public LimitDtoRs updateDailyLimit(LimitDtoRq limitDtoRq) {
-        if (limitDtoRq.amount().compareTo(BigDecimal.ZERO) < 0) {
+    public LimitDtoRs updateDailyLimit(Long userId, LimitUpdateDtoRq limitUpdateDtoRq) {
+        BigDecimal newDailyLimit = limitUpdateDtoRq.newDailyLimit();
+
+        if (newDailyLimit.compareTo(BigDecimal.ZERO) < 0) {
             throw new NegativeLimitException("Daily limit cannot be negative");
         }
-        UserLimit limit = getLimitByUserId(limitDtoRq.userId())
+
+        UserLimit limit = getLimitByUserId(userId)
                 .orElseThrow(() -> new LimitNotFoundException(
-                        String.format("Limit not found for user ID: %d", limitDtoRq.userId())
+                        String.format("Limit not found for user ID: %d", userId)
                         ));
-        updateLimit(limit, limitDtoRq.amount());
+        updateLimit(limit, newDailyLimit);
         UserLimit updatedLimit = limitRepository.save(limit);
         return limitMapper.toDto(updatedLimit);
     }
@@ -91,12 +90,9 @@ public class LimitServiceImpl implements LimitService {
     @Transactional
     @Scheduled(cron = "${scheduling.cron.reset-time}")
     public void resetAllLimits() {
-        List<UserLimit> allLimits = limitRepository.findAll();
         LocalDateTime now = LocalDateTime.now();
-        for (UserLimit limit : allLimits) {
-            reset(limit, now);
-        }
-        limitRepository.saveAll(allLimits);
+        int updatedCount = limitRepository.resetAllLimits(now);
+        log.info("Reset {} user limits at {}", updatedCount, now);
     }
 
     private Optional<UserLimit> getLimitByUserId(Long userId) {
@@ -117,13 +113,6 @@ public class LimitServiceImpl implements LimitService {
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new InvalidAmountException("Amount must be positive");
         }
-    }
-
-    private boolean isResetNeeded(LocalDateTime lastResetDate) {
-        if (lastResetDate == null) {
-            return true;
-        }
-        return !lastResetDate.toLocalDate().equals(LocalDate.now());
     }
 
     private void deduct(UserLimit limit, BigDecimal amount) {
@@ -167,10 +156,5 @@ public class LimitServiceImpl implements LimitService {
         }
 
         limit.setDailyLimit(newDailyLimit);
-    }
-
-    private void reset(UserLimit limit, LocalDateTime resetTime) {
-        limit.setRemainingLimit(limit.getDailyLimit());
-        limit.setLastResetDate(resetTime);
     }
 }

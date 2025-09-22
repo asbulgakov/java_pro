@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.GetMapping;
 import ru.bulgakov.dto.LimitDtoRq;
 import ru.bulgakov.dto.LimitDtoRs;
+import ru.bulgakov.dto.LimitUpdateDtoRq;
 import ru.bulgakov.service.LimitService;
 
 @RestController
@@ -33,8 +34,11 @@ public class LimitController {
         return limitService.refundLimit(limitDtoRq);
     }
 
-    @PutMapping("/update-limit")
-    public LimitDtoRs updateDailyLimit(@RequestBody LimitDtoRq limitDtoRq) {
-        return limitService.updateDailyLimit(new LimitDtoRq(limitDtoRq.userId(), limitDtoRq.amount()));
+    @PutMapping("/{userId}/update-limit")
+    public LimitDtoRs updateDailyLimit(
+            @PathVariable("userId") Long userId,
+            @RequestBody LimitUpdateDtoRq limitUpdateDtoRq
+    ) {
+        return limitService.updateDailyLimit(userId, limitUpdateDtoRq);
     }
 }
